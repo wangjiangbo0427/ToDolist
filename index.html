@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>todolist</title>
+	<link rel="shortcut icon" type="text/css" href="favicon.ico">
+	<link rel="stylesheet" type="text/css" href="../bootstrap.css">
+	<link rel="stylesheet" type="text/css" href="../animate.css">
+	<style>
+		*{margin: 0;padding: 0;}
+		li{list-style: none;}
+		body{
+			background-color: #CDCDCD;
+		}
+		button,input{
+			border: 0;
+			outline: none;
+		}
+		header{
+			height: 50px;
+			background-color: rgba(47,47,47,0.98);
+		}
+		.nav{
+			width: 600px;
+			padding: 0 10px;
+			font-size: 16px;
+			margin: auto;
+			position: relative;
+		}
+		.nav label{
+			font-size: 24px;
+			width: 100px;
+			line-height: 50px;
+			color:#fff;
+			cursor: pointer;
+		}
+		.nav>button{
+			color: #666;
+			margin-top: 12px;
+			position: absolute;
+			right: -32px;
+			padding: 1px 3px;
+			border-radius: 5px;
+		}
+		.nav input{
+			float: right;
+			width: 60%;
+			height: 24px;
+			font-size:14px;
+			margin-top: 12px;
+			text-indent: 10px;
+			border-radius: 5px;
+		}
+		.nav h2{
+			font-size: 24px;
+			font-weight: bold;
+			position: relative;
+		}
+		.nav h2 .span{
+			position: absolute;
+			top: 2px;
+			right: 5px;
+			display: inline-block;
+			padding: 0 5px;
+			height: 20px;
+			border-radius: 50%;
+			background-color: #E6E6FA;
+			line-height: 22px;
+			text-align: center;
+			color: #666;
+			font-size: 14px;
+		}
+
+		li span{
+			position: absolute;
+			top: 1px;
+			right: 5px;
+			display: inline-block;
+			border-radius: 25%;
+			text-align: center;
+			color: red;
+			font-weight: bold;
+			font-size: 34px;
+			cursor: pointer;
+		}
+		.todo input,.doing input{
+			margin: 0;
+			position: absolute;
+			top: 5px;
+			left: 10px;
+			width: 22px;
+			height: 22px;
+			cursor: pointer;
+		}
+		.nav li{
+			height: 32px;
+			line-height: 32px;
+			background: #fff;
+			position: relative;
+			margin-bottom: 10px;
+			padding: 0 45px;
+			border-radius: 3px;
+			border-left: 5px solid #629A9C;
+			box-shadow: 0 1px 2px rgba(0,0,0,0.07);
+		}
+		.doing li{
+			opacity: 0.6;
+		}
+	</style>
+	<script src="../vue.js"></script>
+	
+</head>
+<body>
+	<div id="wrap">
+		<header>
+			<div class="nav">
+				<label>ToDoList</label>
+				<input type="text" placeholder="添加ToDo" v-model = "newLi">
+				<button id="btn btn-primay" @click = "add" v-if = "newLi">添加</button>
+		</header>
+		<todo @remove = "remove" :list = "list" @change = "change"></todo>
+		<doing @remove = "remove" :list = "list" @change = "change"></doing>
+	</div>
+	<script>
+		Vue.component("todo",{
+			template:`
+				<div class="nav todo">
+					<h2>正在进行时
+						<span class="span">{{count}}</span>
+					</h2>
+					<transition tag="ol" enter-active-class="animated fadeIn" v-if="!count">
+						<p>无待办事件</p>
+					</transition>
+					<transition-group mode="out-in" tag="ol" enter-active-class="animated fadeInLeft" leave-active-class="animated fadeOutRight">
+						<li v-if = "!item.status" v-for = "(item,index) of list" :key = "item.name">
+							<input type = "checkbox" @click = "change(index)">
+							{{item.name}}
+							<span @click = "remove(index)">×</span>
+						</li>
+					</transition-group>
+					
+				</div>
+			`,
+			props:["list"],
+			methods:{
+			remove(index){
+				this.$emit("remove",index)
+			},
+			change(index){
+				this.$emit("change",index)
+			}
+			},
+			computed:{
+				count(){
+					var count = 0;
+					for(let item of this.list){
+						if (!item.status) {
+							count++
+						}
+					}
+					return count;
+				}
+			}
+		});
+		Vue.component("doing",{
+			template:`
+				<div class="nav todo doing">
+					<h2>已经完成
+						<span class="span">{{count}}</span>
+					</h2>
+					<transition tag="ol" enter-active-class="animated fadeIn" v-if="!count">
+						<p>无完成事件</p>
+					</transition>
+					<transition-group mode="out-in" tag="ul" enter-active-class="animated fadeIn" leave-active-class="animated fadeOut">
+						<li v-if = "item.status" v-for = "(item,index) of list" :key = "item.name">
+							<input type = "checkbox" @click = "change(index)" checked>
+							{{item.name}}
+							<span @click = "remove(index)">×</span>
+						</li>
+					</transition-group>
+				</div>
+			`,
+			props:["list"],
+			methods:{
+				remove(index){
+					this.$emit("remove",index)
+				},
+				change(index){
+					this.$emit("change",index)
+				}
+			},
+			computed:{
+				count(){
+					var count = 0;
+					for(let item of this.list){
+						if (item.status) {
+							count++
+						}
+					}
+					return count;
+				}
+			}
+		});
+		var root = new Vue({
+			el:"#wrap",
+			data:{
+				newLi:null,
+				list:[]
+			},
+			methods:{
+				add(){
+					var obj = {
+						name:this.newLi,
+						status:false
+					};
+					this.list.push(obj);
+					console.log(this.list)
+					this.newLi = ""
+				},
+				remove(index){
+					this.list.splice(index,1)
+				},
+				change(index){
+					if (this.list[index].status == false) {
+						this.list[index].status = true;
+					}else{
+						this.list[index].status = false
+					}
+				},
+			},
+			mounted(){
+				var list = JSON.parse(localStorage.getItem("list"));
+				if (list) {
+					this.list = list
+				} 
+			}
+		});
+		window.onunload = function(){
+			localStorage.setItem("list",JSON.stringify(root.list));
+		}
+	</script>
+</body>
+</html>
